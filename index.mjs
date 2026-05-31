@@ -270,15 +270,23 @@ async function main() {
     accountsToRun = listAccounts();
   }
 
-  if (accountsToRun.length === 0) {
+  const hasAccounts = accountsToRun.length > 0;
+
+  // When running with --web, always start web server even without accounts,
+  // so the user can QR-login via the admin page.
+  if (!hasAccounts && !flags.web) {
     console.error("❌ 未找到任何账号。请先运行: node index.mjs --login [--name <账号名>]");
     process.exit(1);
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("❌ 请设置 ANTHROPIC_API_KEY 环境变量。");
-    console.error("   export ANTHROPIC_API_KEY=sk-ant-...");
-    process.exit(1);
+    if (flags.web) {
+      console.warn("⚠️  未设置 ANTHROPIC_API_KEY。桥接功能将不可用，但仍可扫码登录。");
+    } else {
+      console.error("❌ 请设置 ANTHROPIC_API_KEY 环境变量。");
+      console.error("   export ANTHROPIC_API_KEY=sk-ant-...");
+      process.exit(1);
+    }
   }
 
   console.log(`启动桥接: ${accountsToRun.map(a => a.name).join(", ")}`);
@@ -307,6 +315,15 @@ async function main() {
   if (flags.web) {
     const webServer = startWebServer({ port: webPort });
     abortController.signal.addEventListener("abort", () => webServer.close(), { once: true });
+  }
+
+  // If no accounts, web server stays up for QR login; block forever
+  if (!hasAccounts) {
+    console.log("💡 请访问管理页面 http://localhost:" + webPort + " 扫码登录。");
+    console.log("   Railway 用户请访问你的 .up.railway.app 域名。");
+    // Keep process alive indefinitely (wait for SIGTERM)
+    await new Promise(() => {});
+    return;
   }
 
   // Start each account concurrently
