@@ -1,0 +1,19 @@
+{
+  "name": "wechat-claude-bridge",
+  "version": "1.0.0",
+  "description": "Standalone bridge connecting Claude to WeChat via iLink Bot protocol",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs --web",
+    "login": "node index.mjs --login"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
